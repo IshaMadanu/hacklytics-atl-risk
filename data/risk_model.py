@@ -4,10 +4,6 @@ from geopy.geocoders import Nominatim
 import time
 import os
 
-# ==============================
-# 1️⃣ LOAD DATA
-# ==============================
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 crime_df = pd.read_csv(
@@ -27,10 +23,6 @@ sexoffender_df = pd.read_csv(
 sexoffender_df.columns = sexoffender_df.columns.str.strip()
 
 
-# ==============================
-# 2️⃣ HAVERSINE DISTANCE
-# ==============================
-
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
     phi1 = math.radians(lat1)
@@ -48,9 +40,6 @@ def haversine(lat1, lon1, lat2, lon2):
     return R * c
 
 
-# ==============================
-# 3️⃣ CRIMES IN RADIUS
-# ==============================
 
 def crimes_within_radius(user_lat, user_lon, radius_km=0.25):
 
@@ -80,9 +69,6 @@ def crimes_within_radius(user_lat, user_lon, radius_km=0.25):
     return pd.DataFrame(nearby)
 
 
-# ==============================
-# 4️⃣ RISK MODEL
-# ==============================
 
 def calculate_risk(user_lat, user_lon, time_of_day):
 
@@ -116,9 +102,9 @@ def calculate_risk(user_lat, user_lon, time_of_day):
     # Base multiplier by watch period — night is always riskier than day
     # regardless of local crime history
     base_time_multiplier = {
-        "Day Watch":     1.0,   # 07:00-14:59 — lowest risk
-        "Evening Watch": 1.4,   # 15:00-22:59 — moderate
-        "Morning Watch": 0.7,   # 23:00-06:59 — highest risk (late night / early morning)
+        "Day Watch":     1.0,
+        "Evening Watch": 1.4,
+        "Morning Watch": 0.7,
 
     }.get(time_of_day, 1.0)
 
@@ -129,9 +115,6 @@ def calculate_risk(user_lat, user_lon, time_of_day):
     return round(risk_score, 2), total
 
 
-# ==============================
-# 5️⃣ GEOCODING HELPERS
-# ==============================
 
 def address_to_coords(address):
     geolocator = Nominatim(user_agent="atlanta_risk_app")
@@ -144,10 +127,7 @@ def address_to_coords(address):
 
 
 def geocode_addresses(df, street_col, city_col, state_col, user_agent="map_app"):
-    """
-    One-time utility to geocode a dataframe and return it with LATITUDE/LONGITUDE columns.
-    Call this manually and save the result yourself — do NOT call at module level.
-    """
+
     geolocator = Nominatim(user_agent=user_agent)
     latitudes = []
     longitudes = []
@@ -180,9 +160,6 @@ def geocode_addresses(df, street_col, city_col, state_col, user_agent="map_app")
     return df
 
 
-# ==============================
-# 6️⃣ MAIN (manual testing only)
-# ==============================
 
 if __name__ == "__main__":
 
