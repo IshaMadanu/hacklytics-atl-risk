@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VibeCheck</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f13;
+      color: #e8e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 6px;
+      background: linear-gradient(90deg, #ff6b6b, #c77dff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.9rem;
+      margin-bottom: 36px;
+      text-align: center;
+    }
+
+    .card {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 700px;
+      margin-bottom: 24px;
+    }
+
+    /* Tab switcher */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #2a2a3a;
+      background: #0f0f13;
+      color: #888;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 500;
+    }
+
+    .tab-btn.active {
+      background: #2a2a3a;
+      color: #e8e8f0;
+      border-color: #c77dff;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Screenshot upload */
+    .drop-zone {
+      border: 2px dashed #3a3a55;
+      border-radius: 12px;
+      padding: 48px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: #c77dff;
+      background: #1f1f30;
+    }
+
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .drop-zone .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .drop-zone p { color: #888; font-size: 0.95rem; }
+    .drop-zone p span { color: #c77dff; }
+
+    #previews { margin-top: 20px; display: none; }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .preview-item {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #2a2a3a;
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-item .remove-single {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      background: rgba(0,0,0,0.7);
+      border: none;
+      color: #fff;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      cursor: pointer;
+      font-size: 0.7rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .preview-item .remove-single:hover { background: #ff6b6b; }
+
+    .preview-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .image-count { font-size: 0.82rem; color: #888; }
+
+    .clear-all-btn {
+      background: none;
+      border: 1px solid #444;
+      color: #888;
+      padding: 4px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .clear-all-btn:hover { border-color: #ff6b6b; color: #ff6b6b; }
+
+    /* Text input */
+    .text-label {
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    #textInput {
+      width: 100%;
+      height: 220px;
+      background: #0f0f13;
+      border: 1px solid #2a2a3a;
+      border-radius: 10px;
+      padding: 14px;
+      color: #e8e8f0;
+      font-size: 0.9rem;
+      font-family: 'Segoe UI', sans-serif;
+      outline: none;
+      resize: vertical;
+      line-height: 1.6;
+      transition: border 0.2s;
+    }
+
+    #textInput:focus { border-color: #c77dff; }
+    #textInput::placeholder { color: #444; }
+
+    .text-hint {
+      font-size: 0.75rem;
+      color: #555;
+      margin-top: 8px;
+    }
+
+    .analyze-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(90deg, #c77dff, #ff6b6b);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: opacity 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .analyze-btn:hover { opacity: 0.88; }
+    .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 16px 0 4px;
+      color: #888;
+      font-size: 0.9rem;
+    }
+
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid #2a2a3a;
+      border-top-color: #c77dff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #results { display: none; }
+
+    .verdict-banner {
+      padding: 16px 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-align: center;
+    }
+
+    .verdict-danger { background: #2d0f0f; border: 1px solid #7f1d1d; color: #fca5a5; }
+    .verdict-warning { background: #2d200f; border: 1px solid #7f4f1d; color: #fcd34d; }
+    .verdict-safe { background: #0f2d1a; border: 1px solid #1d7f4f; color: #6ee7b7; }
+
+    .section { margin-bottom: 20px; }
+
+    .section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .flag-item {
+      background: #141420;
+      border-left: 3px solid #ff6b6b;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    .flag-item.yellow { border-left-color: #fbbf24; }
+    .flag-item.green { border-left-color: #34d399; }
+
+    .flag-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+
+    .flag-label.red { color: #ff6b6b; }
+    .flag-label.yellow { color: #fbbf24; }
+    .flag-label.green { color: #34d399; }
+
+    .summary-box {
+      background: #141420;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 0.93rem;
+      line-height: 1.7;
+      color: #ccc;
+    }
+
+    .error-box {
+      background: #2d0f0f;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+      padding: 14px 18px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<a href="/" id="back-btn" style="
+    position: fixed;
+    top: 14px;
+    left: 16px;
+    padding: 7px 16px;
+    background: linear-gradient(90deg, #c77dff, #ff6b6b);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Segoe UI', sans-serif;
+    z-index: 999;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+">🗺️ Risk Map</a>
+
+<h1 style="margin-top: 20px;">🚩 VibeCheck</h1>
+<p class="subtitle">Upload screenshots or paste text — we'll tell you if something's off.</p>
+
+<div class="card">
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabScreenshot">📸 Screenshots</button>
+    <button class="tab-btn" id="tabText">💬 Paste Text</button>
+  </div>
+
+  <!-- Screenshot panel -->
+  <div class="tab-panel active" id="panelScreenshot">
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*" multiple />
+      <div class="icon">📸</div>
+      <p>Drag & drop screenshots here<br>or <span>click to browse</span> — you can add multiple</p>
+    </div>
+
+    <div id="previews">
+      <div class="preview-grid" id="previewGrid"></div>
+      <div class="preview-actions">
+        <span class="image-count" id="imageCount"></span>
+        <button class="clear-all-btn" id="clearAllBtn">✕ Clear all</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Text panel -->
+  <div class="tab-panel" id="panelText">
+    <label class="text-label">Paste or speak your conversation below</label>
+    <textarea id="textInput" placeholder="Them: Hey are you coming tonight&#10;You: Yeah I'll be there&#10;Them: You always say that and then bail&#10;..."></textarea>
+    <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+      <button id="voiceBtn" style="
+          display:flex; align-items:center; gap:6px;
+          background:#0f0f13; border:1px solid #2a2a3a;
+          color:#888; padding:8px 16px; border-radius:8px;
+          cursor:pointer; font-size:0.85rem; transition:all 0.2s;
+        ">🎙️ Hold to speak</button>
+      <span id="voiceStatus" style="font-size:0.78rem; color:#555;"></span>
+    </div>
+    <p class="text-hint">Format doesn't matter — just paste or speak the messages as they appear.</p>
+  </div>
+
+  <div style="display:flex; align-items:center; gap:10px; margin-top:20px; margin-bottom:0;">
+    <input type="checkbox" id="deescalateCheck" style="
+        width:16px; height:16px; accent-color:#c77dff; cursor:pointer; flex-shrink:0;
+      "/>
+    <label for="deescalateCheck" style="font-size:0.85rem; color:#888; cursor:pointer;">
+      Suggest what I should say to de-escalate the situation
+    </label>
+  </div>
+  <button class="analyze-btn" id="analyzeBtn" disabled>Analyze Conversation</button>
+  <div class="loader" id="loader">
+    <div class="spinner"></div>
+    Analyzing...
+  </div>
+</div>
+
+<div class="card" id="results">
+  <div id="verdictBanner" class="verdict-banner"></div>
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="section" id="flagsSection">
+    <div class="section-title">🚩 Detected Behaviors</div>
+    <div id="flagsList"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📋 Overall Summary</div>
+    <div class="summary-box" id="summaryBox"></div>
+  </div>
+
+  <div class="section" id="deescalateSection" style="display:none;">
+    <div class="section-title">💬 How to Respond</div>
+    <div class="summary-box" id="deescalateBox" style="color:#ccc;"></div>
+  </div>
+</div>
+
+<script>
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const previews = document.getElementById('previews');
+  const previewGrid = document.getElementById('previewGrid');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  const imageCount = document.getElementById('imageCount');
+  const analyzeBtn = document.getElementById('analyzeBtn');
+  const loader = document.getElementById('loader');
+  const results = document.getElementById('results');
+  const textInput = document.getElementById('textInput');
+  const tabScreenshot = document.getElementById('tabScreenshot');
+  const tabText = document.getElementById('tabText');
+  const panelScreenshot = document.getElementById('panelScreenshot');
+  const panelText = document.getElementById('panelText');
+
+  let images = [];
+  let activeTab = 'screenshot';
+
+  // Tab switching
+  tabScreenshot.addEventListener('click', () => {
+    activeTab = 'screenshot';
+    tabScreenshot.classList.add('active');
+    tabText.classList.remove('active');
+    panelScreenshot.classList.add('active');
+    panelText.classList.remove('active');
+    updateAnalyzeBtn();
+  });
+
+  tabText.addEventListener('click', () => {
+    activeTab = 'text';
+    tabText.classList.add('active');
+    tabScreenshot.classList.remove('active');
+    panelText.classList.add('active');
+    panelScreenshot.classList.remove('active');
+    updateAnalyzeBtn();
+  });
+
+  textInput.addEventListener('input', updateAnalyzeBtn);
+
+  // Voice to text
+  const voiceBtn = document.getElementById('voiceBtn');
+  const voiceStatus = document.getElementById('voiceStatus');
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    voiceBtn.style.display = 'none';
+    voiceStatus.textContent = 'Voice not supported in this browser. Use Chrome.';
+    voiceStatus.style.color = '#ff6b6b';
+  } else {
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    let isListening = false;
+    let savedText = '';
+
+    recognition.onresult = e => {
+      let interim = '';
+      let final = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
+        else interim += e.results[i][0].transcript;
+      }
+      savedText += final;
+      textInput.value = savedText + interim;
+      updateAnalyzeBtn();
+    };
+
+    recognition.onerror = e => {
+      voiceStatus.textContent = `Error: ${e.error}`;
+      voiceStatus.style.color = '#ff6b6b';
+      stopListening();
+    };
+
+    recognition.onend = () => {
+      if (isListening) recognition.start();
+    };
+
+    function startListening() {
+      isListening = true;
+      savedText = textInput.value;
+      recognition.start();
+      voiceBtn.style.background = '#2d0f0f';
+      voiceBtn.style.borderColor = '#ff6b6b';
+      voiceBtn.style.color = '#fca5a5';
+      voiceBtn.textContent = '⏹️ Stop recording';
+      voiceStatus.textContent = 'Listening...';
+      voiceStatus.style.color = '#34d399';
+    }
+
+    function stopListening() {
+      isListening = false;
+      recognition.stop();
+      voiceBtn.style.background = '#0f0f13';
+      voiceBtn.style.borderColor = '#2a2a3a';
+      voiceBtn.style.color = '#888';
+      voiceBtn.textContent = '🎙️ Hold to speak';
+      voiceStatus.textContent = 'Done.';
+      setTimeout(() => voiceStatus.textContent = '', 2000);
+    }
+
+    voiceBtn.addEventListener('click', () => {
+      if (!isListening) startListening();
+      else stopListening();
+    });
+  }
+
+  function updateAnalyzeBtn() {
+    if (activeTab === 'screenshot') {
+      analyzeBtn.disabled = images.length === 0;
+    } else {
+      analyzeBtn.disabled = textInput.value.trim().length === 0;
+    }
+  }
+
+  // Drag and drop
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')).forEach(loadImage);
+  });
+
+  fileInput.addEventListener('change', () => {
+    Array.from(fileInput.files).forEach(loadImage);
+    fileInput.value = '';
+  });
+
+  clearAllBtn.addEventListener('click', () => {
+    images = [];
+    previewGrid.innerHTML = '';
+    previews.style.display = 'none';
+    updateAnalyzeBtn();
+    results.style.display = 'none';
+  });
+
+  function loadImage(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const result = e.target.result;
+      images.push({ base64: result.split(',')[1], mimeType: file.type, src: result });
+      addPreview(images[images.length - 1], images.length - 1);
+      previews.style.display = 'block';
+      updateAnalyzeBtn();
+      updateCount();
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function addPreview(image, index) {
+    const item = document.createElement('div');
+    item.className = 'preview-item';
+    item.innerHTML = `
+      <img src="${image.src}" alt="Screenshot ${index + 1}" />
+      <button class="remove-single">✕</button>
+    `;
+    item.querySelector('.remove-single').addEventListener('click', () => {
+      images.splice(index, 1);
+      rebuildPreviews();
+    });
+    previewGrid.appendChild(item);
+  }
+
+  function rebuildPreviews() {
+    previewGrid.innerHTML = '';
+    images.forEach((img, i) => addPreview(img, i));
+    if (images.length === 0) { previews.style.display = 'none'; }
+    updateAnalyzeBtn();
+    updateCount();
+  }
+
+  function updateCount() {
+    imageCount.textContent = `${images.length} screenshot${images.length !== 1 ? 's' : ''} selected`;
+  }
+
+  analyzeBtn.addEventListener('click', analyze);
+
+  const deescalateCheck = document.getElementById('deescalateCheck');
+
+  const prompt = `You are a senior forensic psychologist and relationship abuse specialist with 20 years of experience identifying coercive control, emotional abuse, and manipulation in intimate relationships, friendships, and family dynamics. You have deep expertise in the following areas and must analyze every conversation through all of these lenses simultaneously.
+
+WHAT YOU ARE ANALYZING:
+You are reading a conversation between two or more people. Your job is to protect the recipient by identifying ANY behavior that could be harmful to their mental health, autonomy, self-esteem, or safety — even if it seems subtle or minor on the surface.
+
+DETAILED BEHAVIOR CATALOG — check for every single one of these:
+
+GASLIGHTING (any attempt to distort someone's reality):
+- Flat denial ("I never said that", "that never happened", "you're imagining things")
+- Memory manipulation ("you always forget things", "your memory is terrible")
+- Minimizing feelings ("you're too sensitive", "you're overreacting", "it was just a joke")
+- Reality distortion ("that's not what I meant", "you're twisting my words")
+- Making them feel unstable or irrational ("you're being crazy", "you're paranoid")
+- Rewriting history after the fact
+- Using their past mistakes to invalidate current concerns
+- Dismissing their feelings as dramatic or irrational
+- Subtle invalidation through tone, sarcasm, or eye-rolling language
+
+COERCIVE CONTROL:
+- Controlling who they see, where they go, what they wear
+- Monitoring behavior or demanding constant updates
+- Financial control or manipulation
+- Isolating from friends or family ("they're a bad influence", "they don't really care about you")
+- Using children, pets, or loved ones as leverage
+- Threatening to leave or abandon unless demands are met
+
+MANIPULATION TACTICS:
+- DARVO: Deny, Attack, Reverse Victim and Offender (flipping the situation to become the victim)
+- Love bombing: excessive compliments or affection used to control or overwhelm
+- Future faking: making promises they never intend to keep
+- Moving goalposts: changing expectations so the person can never succeed
+- Intermittent reinforcement: unpredictable hot/cold behavior to create dependency
+- Silent treatment as punishment
+- Triangulation: bringing in a third person to make someone jealous or insecure
+- Guilt tripping: making them feel responsible for the abuser's emotions
+- Weaponizing vulnerability: using things they shared in confidence against them
+
+EMOTIONAL ABUSE:
+- Direct insults or name calling
+- Belittling achievements or dreams ("that's not realistic", "you could never do that")
+- Public humiliation or embarrassment
+- Mocking their appearance, intelligence, or abilities
+- Comparing them unfavorably to others
+- Constant criticism disguised as "helpfulness"
+- Withholding affection or praise as punishment
+
+TOXIC PATTERNS:
+- Deflection: changing the subject when confronted
+- Projection: accusing the other person of what they themselves are doing
+- Minimization: downplaying serious issues
+- Blame shifting: making everything the other person's fault
+- Chronic lateness, cancellations, or disrespect disguised as normal behavior
+- Passive aggression
+
+RED FLAGS (warning signs even if not abusive yet):
+- Possessiveness or jealousy framed as love ("I just care so much about you")
+- Needing to know whereabouts constantly
+- Getting angry or sulking when boundaries are set
+- Moving too fast emotionally or physically
+- Disrespecting boundaries after being told no
+- Making the recipient feel responsible for their happiness or mental health
+
+CALIBRATION RULES — follow these exactly:
+- A genuine compliment is NOT a red flag. Do not over-flag.
+- Normal friendly conversation should return "LOOKS OKAY" with no flags or only positive notes.
+- Only flag gaslighting if there is a CLEAR attempt to distort reality — not just reassurance or disagreement.
+- Severity "high" = direct, clear abuse or manipulation. Severity "medium" = a pattern or concerning behavior. Severity "low" = subtle, worth watching. Severity "positive" = healthy behavior worth noting.
+- If you see a PATTERN across multiple messages (e.g. repeated minimizing), flag the pattern, not just individual messages.
+- Consider the POWER DYNAMIC — who seems to have more control in this conversation?
+- Consider TONE — is one person walking on eggshells? Are responses short and fearful?
+- If the conversation is completely healthy and normal, say so clearly and kindly.
+
+You MUST respond with ONLY a raw JSON object. No markdown. No backticks. No explanation. No text before or after. First character must be { and last must be }.
+
+Use this exact structure:
+{"verdict":"DANGER or WARNING or LOOKS OKAY","verdictReason":"one sentence explaining the most important finding","flags":[{"type":"Gaslighting or Toxic Language or Abusive Behavior or Coercive Control or Manipulation or Emotional Abuse or Red Flag or Toxic Pattern or Positive Note","severity":"high or medium or low or positive","description":"specific explanation quoting exact words or phrases, explaining WHY this is harmful and what effect it likely has on the recipient"}],"summary":"4-6 sentences written directly and warmly to the recipient. Explain what you see happening, name the specific tactics being used, validate their feelings, and tell them what to watch out for. If the conversation is healthy, affirm that clearly."}`;
+
+  async function analyze() {
+    analyzeBtn.disabled = true;
+    loader.style.display = 'block';
+    results.style.display = 'none';
+
+    // Build request body for Gemini
+    let parts;
+    if (activeTab === 'screenshot') {
+      parts = [{ text: prompt }];
+      images.forEach(img => {
+        parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } });
+      });
+    } else {
+      const conversationText = textInput.value.trim();
+      parts = [{ text: prompt + '\n\nHere is the conversation to analyze:\n\n' + conversationText }];
+    }
+
+    try {
+      // ✅ Calls YOUR serverless function — API key never touches the browser
+      const response = await fetch(`/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: { temperature: 0.0, maxOutputTokens: 2000, thinkingConfig: { thinkingBudget: 0 } }
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || 'API error');
+
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+      let cleaned = rawText
+        .replace(/```json|```/g, '')
+        .replace(/[\u0000-\u001F\u007F-\u009F]/g, ' ')
+        .replace(/,(\s*[}\]])/g, '$1')
+        .trim();
+
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No valid JSON found in response');
+
+      let parsed = null;
+      const candidates = [...cleaned.matchAll(/\{[\s\S]*\}/g)].map(m => m[0]);
+      candidates.push(jsonMatch[0]);
+      for (const candidate of candidates.reverse()) {
+        try {
+          parsed = JSON.parse(candidate);
+          if (parsed.verdict && parsed.summary) break;
+        } catch {
+          try {
+            const fixedJson = candidate
+              .replace(/([{,]\s*)(\w+)(\s*:)/g, '$1"$2"$3')
+              .replace(/:\s*'([^']*)'/g, ': "$1"')
+              .replace(/,(\s*[}\]])/g, '$1');
+            parsed = JSON.parse(fixedJson);
+            if (parsed.verdict && parsed.summary) break;
+          } catch { continue; }
+        }
+      }
+      if (!parsed || !parsed.verdict) throw new Error('No valid JSON found in response');
+
+      renderResults(parsed);
+
+      if (deescalateCheck && deescalateCheck.checked && parsed.verdict) {
+        await generateDeescalation(parsed);
+      }
+
+    } catch (err) {
+      results.style.display = 'block';
+      document.getElementById('errorBox').style.display = 'block';
+      document.getElementById('errorBox').textContent = `Error: ${err.message}. Please try again.`;
+      document.getElementById('verdictBanner').style.display = 'none';
+      document.getElementById('flagsSection').style.display = 'none';
+      document.getElementById('summaryBox').parentElement.style.display = 'none';
+    } finally {
+      loader.style.display = 'none';
+      analyzeBtn.disabled = false;
+    }
+  }
+
+  async function generateDeescalation(analysis) {
+    const deescalateSection = document.getElementById('deescalateSection');
+    const deescalateBox = document.getElementById('deescalateBox');
+    deescalateSection.style.display = 'block';
+    deescalateBox.textContent = 'Generating response suggestions...';
+
+    const severity = analysis.verdict;
+    const flags = (analysis.flags || []).map(f => `${f.type} (${f.severity}): ${f.description}`).join('\n');
+    const summary = analysis.summary;
+
+    const deescalatePrompt = `You are a compassionate relationship counselor and communication expert.
+
+A person has just had their conversation analyzed and here is what was found:
+
+Verdict: ${severity}
+Summary: ${summary}
+Detected behaviors:
+${flags}
+
+Your job is to give the user actual messages they can copy and send back to the OTHER person in the conversation. These are replies they will type and send — not words of comfort for them.
+
+Keep suggestions short, realistic, and something a real person would actually text. No lengthy speeches.
+
+If verdict is LOOKS OKAY: Give 1-2 friendly natural replies they could send to keep things positive.
+If verdict is WARNING: Give 2-3 reply options from gentle to firm. Label them so the user knows when to use each one (e.g. "If you want to stay calm:" or "If you want to set a boundary:").
+If verdict is DANGER: Give 2-3 firm reply options focused on protecting themselves. Label each one. Add one short sentence at the end advising whether they should consider limiting contact with this person.
+
+Format: short intro sentence, then each suggestion on its own line in quotes. Do not comfort the user or apologize to them. Just give them the words to send.`;
+
+    try {
+      // ✅ Also calls YOUR serverless function — not Gemini directly
+      const response = await fetch(`/api/analyze`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: deescalatePrompt }] }],
+          generationConfig: { temperature: 0.4, maxOutputTokens: 1000 }
+        })
+      });
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      deescalateBox.textContent = text;
+    } catch (err) {
+      deescalateBox.textContent = 'Could not generate suggestions. Please try again.';
+    }
+  }
+
+  function renderResults(data) {
+    document.getElementById('errorBox').style.display = 'none';
+    document.getElementById('deescalateSection').style.display = 'none';
+    document.getElementById('flagsSection').style.display = 'block';
+    document.getElementById('summaryBox').parentElement.style.display = 'block';
+
+    const banner = document.getElementById('verdictBanner');
+    banner.style.display = 'block';
+    banner.className = 'verdict-banner';
+    const emojiMap = { 'DANGER': '🚨', 'WARNING': '⚠️', 'LOOKS OKAY': '✅' };
+    banner.textContent = `${emojiMap[data.verdict] || '❓'} ${data.verdict} — ${data.verdictReason}`;
+    if (data.verdict === 'DANGER') banner.classList.add('verdict-danger');
+    else if (data.verdict === 'WARNING') banner.classList.add('verdict-warning');
+    else banner.classList.add('verdict-safe');
+
+    const flagsList = document.getElementById('flagsList');
+    flagsList.innerHTML = '';
+    (data.flags || []).forEach(flag => {
+      const isPositive = flag.severity === 'positive';
+      const isLow = flag.severity === 'low';
+      const isYellow = flag.severity === 'medium';
+      const div = document.createElement('div');
+      div.className = `flag-item${isPositive || isLow ? ' green' : isYellow ? ' yellow' : ''}`;
+      const labelClass = isPositive || isLow ? 'green' : isYellow ? 'yellow' : 'red';
+      div.innerHTML = `
+        <div class="flag-label ${labelClass}">${flag.type} · ${flag.severity}</div>
+        <div>${flag.description}</div>
+      `;
+      flagsList.appendChild(div);
+    });
+
+    document.getElementById('summaryBox').textContent = data.summary;
+    results.style.display = 'block';
+    results.scrollIntoView({ behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+print(sexoffender_df[['sor','ZIP CODE','Latitude','Longitude']])
